@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+        <title>Teste basico roteiro de boy</title>
+        <link rel="stylesheet" href="jquery/jquery.mobile-1.4.5.min.css" />
+        <script type="text/javascript" src="cordova.js"></script>
+        <script type="text/javascript" charset="utf-8" src="jquery/jquery-3.2.1.js"></script>
+        <script type="text/javascript" charset="utf-8" src="jquery/jquery.mobile-1.4.5.min.js"></script>
+        <script type="text/javascript" charset="utf-8">
+
+    // Wait for Cordova to load
+    //
+    //document.addEventListener("deviceready", onDeviceReady, false);
+    function init() {
+        document.addEventListener("deviceready", deviceReady, true);
+        
+    }
+    // Cordova is ready
+    //
+    function pegalocal() {
+        navigator.geolocation.getCurrentPosition(onSuccess, onError);
+    }
+
+    // onSuccess Geolocation
+    //
+    function onSuccess(position) {
+        var element = document.getElementById('rotmsg');
+        element.innerHTML = 'Latitude: '           + position.coords.latitude              + '<br />' +
+                            'Longitude: '          + position.coords.longitude             + '<br />' +
+                            'Altitude: '           + position.coords.altitude              + '<br />' +
+                            'Accuracy: '           + position.coords.accuracy              + '<br />' +
+                            'Altitude Accuracy: '  + position.coords.altitudeAccuracy      + '<br />' +
+                            'Heading: '            + position.coords.heading               + '<br />' +
+                            'Speed: '              + position.coords.speed                 + '<br />' +
+                            'Timestamp: '          + position.timestamp          + '<br />';
+    }
+
+    // onError Callback receives a PositionError object
+    //
+    function onError(error) {
+        alert('code: '    + error.code    + '\n' +
+                'message: ' + error.message + '\n');
+    }
+
+    // Cria e inicializa Banco de Dados
+    //
+    function InitDBtable(tx) {
+        tx.executeSql('CREATE TABLE IF NOT EXISTS ROTEIRO_CONTESP (IDROT  INTEGER ,usuario TEXT ,codcli integer,nome text,responsavel text,codprot integer,obs text,ordem integer,boy text,CONFIR_BOY text,CONFIR_CLI text)');
+        //tx.executeSql('insert into ROTEIRO_CONTESP (IDROT,usuario,codcli,nome) values (1,"LEO",400,"CONTESP")');
+    }
+
+    // Cria e inicializa Banco de Dados
+    //
+    function AtzDBtable(tx) {
+        tx.executeSql('select IDROT,usuario,codcli,nome from ROTEIRO_CONTESP ',[], querySuccess, errorCBselect);
+        console.log("Select ");
+    }
+
+    function querySuccess(tx, results) {
+        console.log("Returned rows = " + results.rows.length);
+        // this will be true since it was a select statement and so rowsAffected was 0
+
+        var len = results.rows.length;
+        var element = document.getElementById("resdb");
+        var eltbl = document.getElementById("tblqryrot");
+        var strout = '';
+        var strtbl = '<tbody>';
+        console.log("DEMO table: " + len + " rows found.");
+        for (var i=0; i<len; i++){
+            console.log("Row = " + i + " ID = " + results.rows.item(i).IDROT + " Data =  " + results.rows.item(i).usuario);
+            strout = strout + "Row = " + i + " ID = " + results.rows.item(i).IDROT + " Data =  " + results.rows.item(i).usuario+"<br>";
+            strtbl = strtbl + "<tr>";
+            strtbl = strtbl + "<td>"+results.rows.item(i).codcli +"</td>";
+            strtbl = strtbl + "<td>"+results.rows.item(i).nome +"</td>";
+            strtbl = strtbl + "</tr>";
+        }
+        strtbl = strtbl + "</tbody>";
+        //element.innerHTML = strout;    
+        eltbl.innerHTML = strtbl;    
+    }
+    
+    // Transaction error callback
+    //
+    function errorCB(err) {
+        console.log("Error processing SQL: "+err.code);
+    }
+
+        // Transaction error callback
+    //
+    function errorCBselect(err) {
+        console.log("Error processing Select: "+err.code+" - "+request.status);
+    }
+    // Transaction success callback
+    //
+    function successCB() {
+         console.log("Success processing SQL ");
+    }
+
+    // Inicializa banco de dados    
+    function initbanco(){
+        var db = window.openDatabase("dbCONTESPBOY", "1.0", "CONTESPBOY", 200000);
+        db.transaction(InitDBtable, errorCB, successCB);    
+    }
+    
+    function atz_rot(){
+        var db = window.openDatabase("dbCONTESPBOY", "1.0", "CONTESPBOY", 200000);
+        console.log("Aberto ");
+        db.transaction(AtzDBtable, errorCB);        
+        console.log("Atualizado ");
+    }
+    
+    function carg_rot(){
+                    console.log("Inicio Ajax ");
+                    $.ajax({
+                      type: "POST",
+                      url: "http://contesp.com.br/rpa/roteirophonecli",
+                      data: ({name: '1'}),
+                      cache: false,
+                      crossDomain: true,
+                      dataType: "json",
+                      success: onSuccesscarg_rot,
+                      error: errorCB
+                    });    
+                    console.log("Fim Ajax ");
+    }
+            
+    function onSuccesscarg_rot(data)
+    {
+        $("#resdb").html("Result: " + data);
+        var len = data;
+        var strtbl = '<tbody>';        
+        console.log("Ini table ");
+        $.each( data, function( i, item ) {
+            strtbl = strtbl + "<tr>";
+            strtbl = strtbl + "<td>"+item.CODCLI +"</td>";
+            strtbl = strtbl + "<td>"+item.NOME +"</td>";
+            strtbl = strtbl + "</tr>";
+
+        });        
+        
+        strtbl = strtbl + "</tbody>";
+        //element.innerHTML = strout;    
+        console.log("Fim table ");
+        $('#resdb').html(strtbl);            
+    }
+            
+    </script>
+        
+    </head>
+    <body onload="init()">
+        <div data-role="page"  data-theme="b"  id="main">
+        <div data-role="header">
+        <h1>Teste basico roteiro de boy</h1>
+        </div>
+        <div id="content" data-role="main" class="ui-content">
+        
+        
+         <button onclick="initbanco()">Init</button>
+         <button onclick="carg_rot()">Carregar</button>
+         <button class="ui-btn" onclick="atz_rot()">Atualizar</button>
+         <button class="ui-btn" onclick="pegalocal()">Entregue</button> 
+        <p id="rotmsg">.</p>
+        <div id="tblcli">
+        <table>
+        </table>
+        </div>
+        <div id="tblroteiro">
+        <p id='resdb'>
+        resultado
+        </p>        
+        <table  data-role="table" data-theme="d" class="ui-body ui-shadow table-stripe ui-responsive" id="tblqryrot" >
+        </table>
+        </div>
+        
+        </div>
+        </div>
+        
+    </body>
+</html>
